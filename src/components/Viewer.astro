@@ -1,0 +1,626 @@
+---
+/**
+ * Full-screen viewer for the thumbnails (native <dialog>, driven by src/scripts/viewer.ts).
+ * "Feed preview" shows the piece at real YouTube sizes on dark and light backgrounds.
+ *
+ * Three layouts:
+ *  - default (≥600px wide, >560px tall): fixed bar / image stage / caption, stage size stays stable;
+ *  - phone portrait (<600px wide): edge-to-edge image with the caption right below it;
+ *  - short screens (≤560px tall — phone landscape, heavy zoom): the image fills the height, caption below.
+ */
+const themes = [
+  { id: 'dark', label: 'Dark mode' },
+  { id: 'light', label: 'Light mode' },
+];
+---
+
+<dialog class="viewer" data-viewer aria-labelledby="viewer-title" tabindex="-1">
+  <div class="viewer__bar">
+    <p class="viewer__count caps" data-viewer-count aria-hidden="true"></p>
+    <div class="viewer__actions">
+      <button type="button" class="viewer__mode" data-viewer-mode aria-pressed="false">
+        Feed preview
+      </button>
+      <button type="button" class="viewer__icon-btn" data-viewer-close aria-label="Close viewer">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+          <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="viewer__stage" data-viewer-stage>
+    <div class="viewer__full" data-viewer-full></div>
+
+    <div
+      class="viewer__feed"
+      data-viewer-feed
+      role="region"
+      aria-label="Preview at YouTube feed sizes"
+      tabindex="0"
+      hidden
+    >
+      {
+        themes.map((theme) => (
+          <div class={`feed feed--${theme.id}`}>
+            <p class="feed__label">{theme.label}</p>
+            <div class="feed__row">
+              <div class="feed__home">
+                <div class="feed__thumb feed__thumb--home" data-feed-slot="360" />
+                <div class="feed__meta" aria-hidden="true">
+                  <span class="feed__avatar" />
+                  <span class="feed__lines">
+                    <span />
+                    <span />
+                  </span>
+                </div>
+                <p class="feed__size">
+                  Home feed · <span data-feed-size="360">360 px</span>
+                </p>
+              </div>
+              <div class="feed__side">
+                <div class="feed__side-row">
+                  <div class="feed__thumb feed__thumb--side" data-feed-slot="168" />
+                  <span class="feed__lines" aria-hidden="true">
+                    <span />
+                    <span />
+                    <span />
+                  </span>
+                </div>
+                <p class="feed__size">Sidebar · 168 px</p>
+              </div>
+            </div>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+
+  <div class="viewer__footer">
+    <div class="viewer__caption" data-viewer-caption>
+      <h2 class="viewer__title" id="viewer-title" data-viewer-title></h2>
+      <p class="viewer__translation" data-viewer-translation></p>
+      <p class="viewer__tags caps" data-viewer-tags></p>
+      <p class="viewer__note" data-viewer-note></p>
+      <p class="viewer__process" data-viewer-process></p>
+    </div>
+
+    <div class="viewer__navs">
+      <button type="button" class="viewer__icon-btn viewer__nav" data-viewer-prev aria-label="Previous thumbnail">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+          <path d="M14.5 5.5L8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
+        </svg>
+      </button>
+      <button type="button" class="viewer__icon-btn viewer__nav" data-viewer-next aria-label="Next thumbnail">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+          <path d="M9.5 5.5L16 12l-6.5 6.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <p class="sr-only" data-viewer-status aria-live="polite" aria-atomic="true"></p>
+  <div class="viewer__preload" data-viewer-preload aria-hidden="true"></div>
+</dialog>
+
+<style is:global>
+  .viewer {
+    /* Horizontal room for the side arrows; viewer.ts mirrors this in its `sizes` value. */
+    --viewer-pad: clamp(12px, 2.4vw, 32px);
+    --stage-pad: var(--viewer-pad);
+
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: var(--bg-deep);
+    color: var(--text);
+    overflow: hidden;
+    outline: none;
+    opacity: 0;
+    transition:
+      opacity 0.22s var(--ease),
+      overlay 0.22s allow-discrete,
+      display 0.22s allow-discrete;
+  }
+
+  .viewer[open] {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    opacity: 1;
+  }
+
+  @starting-style {
+    .viewer[open] {
+      opacity: 0;
+    }
+  }
+
+  .viewer::backdrop {
+    background: transparent;
+  }
+
+  /* ── Top bar ─────────────────────────────────────────────── */
+  .viewer__bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px var(--viewer-pad);
+  }
+
+  .viewer__count {
+    letter-spacing: 0.14em;
+    color: var(--text-muted);
+  }
+
+  .viewer__actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .viewer__mode {
+    height: 36px;
+    padding: 0 14px;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    background: transparent;
+    font-size: 0.75rem;
+    font-weight: 560;
+    font-stretch: 112%;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition:
+      color 0.2s var(--ease),
+      background-color 0.2s var(--ease),
+      border-color 0.2s var(--ease);
+  }
+
+  .viewer__mode:hover {
+    color: var(--text);
+    border-color: rgb(255 255 255 / 0.32);
+  }
+
+  .viewer__mode[aria-pressed='true'] {
+    background: var(--text);
+    border-color: var(--text);
+    color: var(--bg);
+  }
+
+  .viewer__icon-btn {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition:
+      color 0.2s var(--ease),
+      background-color 0.2s var(--ease);
+  }
+
+  .viewer__icon-btn:hover {
+    color: var(--text);
+    background: rgb(255 255 255 / 0.08);
+  }
+
+  /* ── Stage ───────────────────────────────────────────────── */
+  .viewer__stage {
+    position: relative;
+    display: grid;
+    grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+    min-height: 0;
+    padding: 0 var(--stage-pad);
+    touch-action: pan-y pinch-zoom;
+  }
+
+  .viewer__full,
+  .viewer__feed {
+    grid-area: 1 / 1;
+  }
+
+  /* Size container: the frame fits inside it at the image's own ratio, never above its original width. */
+  .viewer__full {
+    container-type: size;
+    display: grid;
+    place-items: center;
+  }
+
+  .viewer__frame {
+    position: relative;
+    width: min(100cqw, var(--w, 100cqw), 100cqh * var(--ar, 16 / 9));
+    aspect-ratio: var(--ar, 16 / 9);
+    overflow: hidden;
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: 0 30px 80px -24px rgb(0 0 0 / 0.7);
+  }
+
+  .viewer__frame picture {
+    display: contents;
+  }
+
+  .viewer__frame img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .viewer__img {
+    opacity: 0;
+    transition: opacity 0.3s var(--ease);
+  }
+
+  .viewer__img.is-loaded {
+    opacity: 1;
+  }
+
+  /* ── Feed preview ────────────────────────────────────────── */
+  .viewer__feed {
+    align-self: center;
+    justify-self: center;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+    width: 100%;
+    max-width: 900px;
+    max-height: 100%;
+    min-width: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border-radius: 12px;
+  }
+
+  @media (min-width: 900px) {
+    .viewer__feed {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .feed {
+    --feed-bg: #0f0f0f;
+    --feed-skeleton: #272727;
+    --feed-label: #aaaaaa;
+
+    min-width: 0;
+    padding: 16px 18px 18px;
+    border-radius: 12px;
+    background: var(--feed-bg);
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.06);
+  }
+
+  .feed--light {
+    --feed-bg: #ffffff;
+    --feed-skeleton: #e5e5e5;
+    --feed-label: #606060;
+  }
+
+  .feed__label,
+  .feed__size {
+    font-size: 0.6875rem;
+    font-weight: 540;
+    font-stretch: 112%;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--feed-label);
+  }
+
+  .feed__row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 22px;
+    margin-top: 12px;
+  }
+
+  .feed__home,
+  .feed__side {
+    width: min(360px, 100%);
+  }
+
+  .feed__thumb {
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background: var(--feed-skeleton);
+  }
+
+  .feed__thumb picture,
+  .feed__thumb img {
+    width: 100%;
+    height: 100%;
+  }
+
+  .feed__thumb img {
+    object-fit: cover;
+  }
+
+  .feed__thumb--home {
+    border-radius: 12px;
+  }
+
+  .feed__thumb--side {
+    flex: none;
+    width: 168px;
+    border-radius: 8px;
+  }
+
+  .feed__meta {
+    display: flex;
+    gap: 12px;
+    margin-top: 12px;
+  }
+
+  .feed__avatar {
+    flex: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--feed-skeleton);
+  }
+
+  .feed__lines {
+    display: grid;
+    flex: 1;
+    gap: 8px;
+    align-content: start;
+  }
+
+  .feed__lines > span {
+    display: block;
+    height: 12px;
+    border-radius: 4px;
+    background: var(--feed-skeleton);
+  }
+
+  .feed__lines > span:last-child {
+    width: 62%;
+  }
+
+  .feed__side {
+    display: grid;
+    gap: 10px;
+  }
+
+  .feed__side-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  .feed__side .feed__lines > span {
+    height: 10px;
+  }
+
+  .feed__home .feed__size {
+    margin-top: 12px;
+  }
+
+  /* Tablet: home and sidebar mockups side by side, so both themes fit without scrolling. */
+  @media (min-width: 600px) and (max-width: 899px) {
+    .feed__row {
+      grid-template-columns: minmax(0, 360px) minmax(0, 1fr);
+      align-items: start;
+    }
+  }
+
+  /* ── Footer: caption + navigation ────────────────────────── */
+  .viewer__footer {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    min-height: 8.75rem; /* reserved, so the image doesn't shift as captions change length */
+    padding: 14px var(--stage-pad) max(16px, env(safe-area-inset-bottom));
+  }
+
+  .viewer__caption {
+    display: grid;
+    gap: 3px;
+    align-content: start;
+    min-width: 0;
+  }
+
+  .viewer__title {
+    font-size: 1rem;
+    line-height: 1.35;
+    font-weight: 600;
+    text-wrap: pretty;
+  }
+
+  .viewer__translation,
+  .viewer__note,
+  .viewer__process {
+    max-width: 82ch;
+    font-size: 0.875rem;
+    line-height: 1.45;
+    color: var(--text-muted);
+    text-wrap: pretty;
+  }
+
+  .viewer__translation .caps {
+    margin-right: 4px;
+  }
+
+  .viewer__caption > p:empty {
+    display: none;
+  }
+
+  .viewer__navs {
+    display: flex;
+    flex: none;
+    gap: 4px;
+  }
+
+  /* Desktop: arrows on the sides, caption aligned with the image's left edge. */
+  @media (min-width: 900px) {
+    .viewer {
+      --stage-pad: 88px;
+    }
+
+    .viewer__caption {
+      width: min(100%, var(--frame-w, 100%));
+      margin-inline: auto;
+    }
+
+    .viewer__note {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
+      overflow: hidden;
+    }
+
+    .viewer__navs {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      justify-content: space-between;
+      padding-inline: calc(var(--viewer-pad) - 4px);
+      transform: translateY(-50%);
+      pointer-events: none;
+    }
+
+    .viewer__nav {
+      width: 52px;
+      height: 52px;
+      pointer-events: auto;
+    }
+  }
+
+  /* Portrait phones and tablets: image and caption as one group, centred on screen;
+     the whole dialog scrolls when the content (e.g. the feed preview) is taller than the screen. */
+  @media (max-width: 599px) and (min-height: 561px),
+    (orientation: portrait) and (max-width: 899px) and (min-height: 561px) {
+    .viewer[open] {
+      grid-template-rows: auto 1fr auto auto 1fr;
+      overflow-y: auto;
+    }
+
+    .viewer__bar {
+      grid-row: 1;
+    }
+
+    .viewer__stage {
+      grid-row: 3;
+      display: block;
+      min-height: auto;
+    }
+
+    .viewer__footer {
+      grid-row: 4;
+      min-height: 0;
+    }
+
+    .viewer__full {
+      container-type: normal;
+      display: block;
+    }
+
+    .viewer__frame {
+      width: min(100%, var(--w, 100%));
+      margin-inline: auto;
+    }
+
+    .viewer__feed {
+      max-height: none;
+      overflow: visible;
+    }
+  }
+
+  /* Phones: the image runs edge to edge; arrows get their own row so the caption keeps the full width. */
+  @media (max-width: 599px) and (min-height: 561px) {
+    .viewer__stage {
+      padding: 0;
+    }
+
+    .viewer__frame {
+      border-radius: 0;
+      box-shadow: none;
+    }
+
+    .viewer__feed {
+      padding-inline: 12px;
+    }
+
+    .viewer__footer {
+      flex-direction: column;
+      gap: 6px;
+      padding-inline: 16px;
+    }
+
+    .viewer__navs {
+      order: -1;
+      align-self: stretch;
+      justify-content: space-between;
+      margin-inline: -10px;
+    }
+  }
+
+  /* Short screens: the image takes the full height; the caption is a scroll away. */
+  @media (max-height: 560px) {
+    .viewer[open] {
+      display: block;
+      overflow-y: auto;
+    }
+
+    .viewer__bar {
+      padding-block: 4px;
+    }
+
+    .viewer__stage {
+      --stage-pad: clamp(8px, 7.5vw, 60px);
+
+      height: calc(100vh - 52px);
+      height: calc(100dvh - 52px);
+    }
+
+    .viewer__footer {
+      --stage-pad: clamp(8px, 7.5vw, 60px);
+
+      min-height: 0;
+    }
+
+    .viewer__caption {
+      width: min(100%, var(--frame-w, 100%));
+      margin-inline: auto;
+    }
+
+    .viewer__navs {
+      position: absolute;
+      top: calc(52px + (100dvh - 52px) / 2);
+      left: 0;
+      right: 0;
+      justify-content: space-between;
+      padding-inline: 8px;
+      transform: translateY(-50%);
+      pointer-events: none;
+    }
+
+    .viewer__nav {
+      pointer-events: auto;
+    }
+  }
+
+  .viewer__preload {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+  }
+</style>

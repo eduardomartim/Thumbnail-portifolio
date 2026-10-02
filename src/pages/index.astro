@@ -1,0 +1,38 @@
+---
+import Base from '../layouts/Base.astro';
+import Header from '../components/Header.astro';
+import Hero from '../components/Hero.astro';
+import WorkSection from '../components/WorkSection.astro';
+import About from '../components/About.astro';
+import Contact from '../components/Contact.astro';
+import Footer from '../components/Footer.astro';
+import Viewer from '../components/Viewer.astro';
+import { site } from '../data/site';
+import { imageFor, orderedProjects, visibleSections } from '../lib/work';
+
+const title = site.name
+  ? `${site.name} — YouTube ${site.role}`
+  : `YouTube ${site.role} — Portfolio`;
+
+// The lead piece doubles as the link-preview image.
+const lead = orderedProjects[0];
+---
+
+<Base
+  title={title}
+  description={site.description}
+  shareImage={lead ? imageFor(lead.file) : undefined}
+  shareImageAlt={lead?.alt}
+>
+  <Header />
+  <main>
+    <Hero />
+    <div id="work">
+      {visibleSections.map((section, i) => <WorkSection section={section} first={i === 0} />)}
+    </div>
+    <About />
+    <Contact />
+  </main>
+  <Footer />
+  <Viewer />
+</Base>

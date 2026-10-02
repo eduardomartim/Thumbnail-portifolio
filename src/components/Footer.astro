@@ -1,0 +1,61 @@
+---
+import { rightsNotice, site } from '../data/site';
+
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="site-footer__inner">
+      <p>Site © {year} {site.name || site.role}</p>
+      <a class="link-underline hit-area" href="#top">Back to top <span aria-hidden="true">↑</span></a>
+      {
+        rightsNotice && (
+          <p class="site-footer__rights">
+            <span>{rightsNotice}</span>
+          </p>
+        )
+      }
+    </div>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    margin-top: var(--section-space);
+    padding-block: 28px 36px;
+  }
+
+  .site-footer__inner {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 12px 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    font-size: 0.8125rem;
+    color: var(--text-faint);
+  }
+
+  /* Always its own row under the copyright; the text inside keeps a readable measure. */
+  .site-footer__rights {
+    flex-basis: 100%;
+    font-size: 0.75rem;
+    line-height: 1.5;
+  }
+
+  .site-footer__rights span {
+    display: block;
+    max-width: 78ch;
+    text-wrap: pretty;
+  }
+
+  .site-footer a {
+    transition: color 0.25s var(--ease);
+  }
+
+  .site-footer a:hover,
+  .site-footer a:focus-visible {
+    color: var(--text);
+  }
+</style>

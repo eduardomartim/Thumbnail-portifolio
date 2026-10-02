@@ -1,0 +1,266 @@
+/* ────────────────────────────────────────────────────────────
+   Tokens
+   The palette is deliberately neutral: the only colour on the
+   page should come from the thumbnails themselves.
+   ──────────────────────────────────────────────────────────── */
+:root {
+  --bg: #0b0b0c;
+  --bg-deep: #08080a; /* behind the full-screen viewer */
+  --surface: #131315;
+  --line: rgb(255 255 255 / 0.08);
+  --line-strong: rgb(255 255 255 / 0.18);
+  --text: #eeece8;
+  --text-muted: #a6a39d; /* 7.8:1 on --bg */
+  --text-faint: #85827c; /* 5.1:1 on --bg */
+
+  --font: 'Archivo Variable', 'Archivo', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --max: 1680px;
+  --gutter: clamp(16px, 4.2vw, 64px);
+  --gap: clamp(16px, 1.8vw, 28px);
+  --row-gap: clamp(36px, 4.5vw, 64px);
+  --section-space: clamp(88px, 11vw, 168px);
+  --header-h: 64px;
+  --radius: 4px;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+
+  color-scheme: dark;
+}
+
+/* ────────────────────────────────────────────────────────────
+   Base
+   ──────────────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-padding-top: calc(var(--header-h) + 16px);
+  scrollbar-gutter: stable;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 1rem;
+  line-height: 1.55;
+  font-weight: 400;
+  font-stretch: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+p,
+ul,
+figure {
+  margin: 0;
+}
+
+ul {
+  padding: 0;
+  list-style: none;
+}
+
+img,
+picture {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+::selection {
+  background: var(--text);
+  color: var(--bg);
+}
+
+:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* ────────────────────────────────────────────────────────────
+   Shared building blocks
+   ──────────────────────────────────────────────────────────── */
+.container {
+  width: 100%;
+  max-width: var(--max);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+/* Tracked, slightly expanded caps — the "film credit" voice of the site.
+   .eyebrow labels sections; .caps is the smaller variant for tags, counters and metadata. */
+.eyebrow,
+.caps {
+  font-weight: 560;
+  font-stretch: 115%;
+  text-transform: uppercase;
+}
+
+.eyebrow {
+  font-size: 0.75rem;
+  line-height: 1.3;
+  letter-spacing: 0.16em;
+  color: var(--text-muted);
+}
+
+.caps {
+  font-size: 0.6875rem;
+  line-height: 1.4;
+  letter-spacing: 0.12em;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+}
+
+/* Inline list with separators that never start a wrapped line:
+   every item carries a leading separator, and the wrapper clips the one at the start of each line. */
+.sep-list-wrap {
+  overflow: hidden;
+}
+
+.sep-list {
+  --sep-w: 1.6em;
+
+  display: flex;
+  flex-wrap: wrap;
+  row-gap: 4px;
+  margin-left: calc(-1 * var(--sep-w));
+}
+
+.sep-list > li {
+  white-space: nowrap;
+}
+
+.sep-list > li::before {
+  content: var(--sep, '·');
+  content: var(--sep, '·') / ''; /* decorative: not read out by screen readers */
+  display: inline-block;
+  width: var(--sep-w);
+  text-align: center;
+  font-weight: 400;
+  color: var(--text-faint);
+}
+
+/* Small outlined label, e.g. the language of a piece. */
+.badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border: 1px solid var(--line-strong);
+  border-radius: 3px;
+  letter-spacing: 0.08em;
+}
+
+/* Grows a small text link's tap area without changing how it looks. */
+.hit-area {
+  position: relative;
+}
+
+.hit-area::before {
+  content: '';
+  position: absolute;
+  inset: -12px -8px;
+}
+
+.link-underline {
+  background: linear-gradient(currentColor, currentColor) no-repeat 0 100% / 0% 1px;
+  transition: background-size 0.45s var(--ease-out);
+  padding-bottom: 2px;
+}
+
+.link-underline:hover,
+.link-underline:focus-visible {
+  background-size: 100% 1px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 100;
+  padding: 10px 14px;
+  background: var(--text);
+  color: var(--bg);
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: var(--radius);
+  transform: translateY(-160%);
+  transition: transform 0.2s var(--ease);
+}
+
+.skip-link:focus-visible {
+  transform: none;
+}
+
+/* ────────────────────────────────────────────────────────────
+   Reveal on scroll (enabled by JS; content stays visible without it)
+   ──────────────────────────────────────────────────────────── */
+.reveal-ready [data-reveal] {
+  transition:
+    opacity 0.9s var(--ease-out),
+    transform 0.9s var(--ease-out);
+}
+
+.reveal-ready [data-reveal]:not(.is-in) {
+  opacity: 0;
+  transform: translateY(18px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Lock page scroll while the viewer is open. */
+html:has(dialog[open]) {
+  overflow: hidden;
+}

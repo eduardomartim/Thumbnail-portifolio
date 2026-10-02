@@ -1,0 +1,140 @@
+---
+import type { Section } from '../data/projects';
+import { pad, projectsIn } from '../lib/work';
+import WorkCard from './WorkCard.astro';
+
+interface Props {
+  section: Section;
+  /** The first section sits directly under the hero, so its lead image loads with high priority. */
+  first?: boolean;
+}
+
+const { section, first = false } = Astro.props;
+const items = projectsIn(section.id);
+
+// "feature": the first piece is shown as a large spread; everything else continues in the grid.
+const lead = section.layout === 'feature' ? items[0] : undefined;
+const rest = lead ? items.slice(1) : items;
+
+const firstNumber = items[0] ? pad(items[0].number) : '';
+const lastNumber = items.length ? pad(items[items.length - 1].number) : '';
+const range = items.length > 1 ? `${firstNumber}–${lastNumber}` : firstNumber;
+---
+
+{
+  items.length > 0 && (
+    <section
+      class:list={['work-section', { 'work-section--first': first }]}
+      id={section.id}
+      aria-labelledby={`${section.id}-title`}
+    >
+      <div class="container">
+        <header class="section-head" data-reveal={first ? undefined : ''}>
+          <h2 class="section-head__title" id={`${section.id}-title`}>
+            {section.title}
+          </h2>
+          <p class="section-head__intro">{section.intro}</p>
+          <p class="section-head__range caps" aria-hidden="true">
+            {range}
+          </p>
+        </header>
+
+        {lead && <WorkCard project={lead} variant="lead" eager={first} />}
+
+        {rest.length > 0 && (
+          <div class:list={['work-grid', { 'work-grid--after-lead': !!lead }]}>
+            {rest.map((p, i) => (
+              <WorkCard project={p} variant="grid" eager={first && !lead && i === 0} />
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
+  )
+}
+
+<style>
+  .work-section {
+    margin-top: var(--section-space);
+  }
+
+  .work-section--first {
+    margin-top: 0;
+  }
+
+  /* ── Section heading ─────────────────────────────────────── */
+  .section-head {
+    display: grid;
+    gap: 6px 24px;
+    padding-top: 18px;
+    margin-bottom: clamp(20px, 2vw, 28px);
+    border-top: 1px solid var(--line);
+  }
+
+  /* Short laptop screens: a little less air so the lead piece stays above the fold. */
+  @media (min-width: 1024px) and (max-height: 880px) {
+    .section-head {
+      margin-bottom: 20px;
+    }
+  }
+
+  .section-head__title {
+    font-size: clamp(1rem, 0.85rem + 0.6vw, 1.375rem);
+    line-height: 1.2;
+    font-weight: 650;
+    font-stretch: 118%;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    text-wrap: balance;
+  }
+
+  .section-head__intro {
+    max-width: 52ch;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    color: var(--text-muted);
+  }
+
+  .section-head__range {
+    display: none;
+  }
+
+  @media (min-width: 1024px) {
+    .section-head {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      column-gap: var(--gap);
+      align-items: baseline;
+    }
+
+    .section-head__title {
+      grid-column: 1 / span 6;
+    }
+
+    .section-head__intro {
+      grid-column: 7 / span 5;
+    }
+
+    .section-head__range {
+      display: block;
+      grid-column: 12 / span 1;
+      justify-self: end;
+    }
+  }
+
+  /* ── Grid ────────────────────────────────────────────────── */
+  .work-grid {
+    display: grid;
+    gap: var(--row-gap) var(--gap);
+  }
+
+  .work-grid--after-lead {
+    margin-top: var(--row-gap);
+  }
+
+  /* One column until there is room for two thumbnails larger than YouTube's own feed size. */
+  @media (min-width: 900px) {
+    .work-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+</style>

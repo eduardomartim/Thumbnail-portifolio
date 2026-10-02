@@ -1,0 +1,89 @@
+---
+import '@fontsource-variable/archivo/wdth.css';
+import '../styles/global.css';
+import fontLatin from '@fontsource-variable/archivo/files/archivo-latin-wdth-normal.woff2?url';
+import type { ImageMetadata } from 'astro';
+import { getImage } from 'astro:assets';
+import { site } from '../data/site';
+
+interface Props {
+  title: string;
+  description: string;
+  /** Image used for link previews (Open Graph / X). */
+  shareImage?: ImageMetadata;
+  shareImageAlt?: string;
+  /** For pages that shouldn't be indexed or shared (404). */
+  noindex?: boolean;
+}
+
+const { title, description, shareImage, shareImageAlt, noindex = false } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+
+const share = shareImage
+  ? await getImage({ src: shareImage, width: 1200, format: 'jpg', quality: 86 })
+  : undefined;
+// Social crawlers need absolute URLs, which exist once the site URL is known (see astro.config.mjs).
+const shareUrl = share && Astro.site ? new URL(share.src, Astro.site).href : share?.src;
+const canonical = Astro.site && !noindex ? new URL(Astro.url.pathname, Astro.site).href : undefined;
+
+// Structured data only from real, filled-in details.
+const jsonLd =
+  !noindex && site.name && canonical
+    ? JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'ProfilePage',
+        url: canonical,
+        mainEntity: {
+          '@type': 'Person',
+          name: site.name,
+          jobTitle: site.role,
+          url: canonical,
+          ...(site.links.length ? { sameAs: site.links.map((l) => l.href) } : {}),
+        },
+      })
+    : undefined;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    {noindex && <meta name="robots" content="noindex" />}
+    {canonical && <link rel="canonical" href={canonical} />}
+    <meta name="theme-color" content="#0b0b0c" />
+    <meta name="color-scheme" content="dark" />
+    <link rel="icon" href={`${base}favicon.svg`} type="image/svg+xml" />
+    <link rel="icon" href={`${base}favicon-32.png`} sizes="32x32" type="image/png" />
+    <link rel="apple-touch-icon" href={`${base}apple-touch-icon.png`} />
+    <link rel="preload" href={fontLatin} as="font" type="font/woff2" crossorigin />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    {canonical && <meta property="og:url" content={canonical} />}
+    {
+      share && (
+        <>
+          <meta property="og:image" content={shareUrl} />
+          <meta property="og:image:width" content={String(share.attributes.width)} />
+          <meta property="og:image:height" content={String(share.attributes.height)} />
+          {shareImageAlt && <meta property="og:image:alt" content={shareImageAlt} />}
+        </>
+      )
+    }
+    <meta name="twitter:card" content={share ? 'summary_large_image' : 'summary'} />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    {share && <meta name="twitter:image" content={shareUrl} />}
+    {jsonLd && <script type="application/ld+json" set:html={jsonLd} />}
+  </head>
+  <body>
+    <slot />
+    <script>
+      import '../scripts/main';
+    </script>
+  </body>
+</html>

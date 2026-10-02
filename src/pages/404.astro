@@ -1,0 +1,31 @@
+---
+import Base from '../layouts/Base.astro';
+import { site } from '../data/site';
+
+const home = import.meta.env.BASE_URL;
+---
+
+<Base title={`Page not found — ${site.name || site.role}`} description={site.description} noindex>
+  <main class="not-found container">
+    <p class="eyebrow">404</p>
+    <h1>This page doesn’t exist.</h1>
+    <a class="link-underline" href={home}>Back to the portfolio</a>
+  </main>
+</Base>
+
+<style>
+  .not-found {
+    display: grid;
+    gap: 18px;
+    align-content: center;
+    justify-items: start;
+    min-height: 100vh;
+  }
+
+  h1 {
+    font-size: clamp(1.75rem, 1rem + 3vw, 3rem);
+    line-height: 1.1;
+    font-weight: 650;
+    font-stretch: 112%;
+  }
+</style>

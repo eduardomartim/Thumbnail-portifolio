@@ -1,0 +1,152 @@
+---
+import { contact, site } from '../data/site';
+
+const hasContact = Boolean(site.email) || site.links.length > 0;
+const showDevHint = import.meta.env.DEV && !hasContact;
+
+// Lets a long address wrap after the @ instead of mid-word.
+const [emailUser, emailDomain] = site.email.split('@');
+---
+
+<section class="contact" id="contact" aria-labelledby="contact-title">
+  <div class="container">
+    <div class="contact__inner">
+      <h2 class="eyebrow contact__label" id="contact-title" data-reveal>Contact</h2>
+
+      <div class="contact__body" data-reveal>
+        {contact.availability && <p class="contact__availability">{contact.availability}</p>}
+
+        {
+          site.email && (
+            <a class="contact__email link-underline" href={`mailto:${site.email}`}>
+              {emailDomain ? (
+                <>
+                  {emailUser}@<wbr />
+                  {emailDomain}
+                </>
+              ) : (
+                site.email
+              )}
+            </a>
+          )
+        }
+
+        {
+          site.links.length > 0 && (
+            <ul class="contact__links">
+              {site.links.map((link) => (
+                <li>
+                  <a class="link-underline" href={link.href} target="_blank" rel="noopener noreferrer">
+                    {link.label}
+                    <span class="sr-only"> (opens in a new tab)</span>
+                    <span class="contact__arrow" aria-hidden="true">↗</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )
+        }
+
+        {
+          showDevHint && (
+            <p class="contact__dev-hint">
+              Add your email and links in <code>src/data/site.ts</code>. This note is only visible in
+              development.
+            </p>
+          )
+        }
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .contact {
+    margin-top: var(--section-space);
+  }
+
+  .contact__inner {
+    display: grid;
+    gap: 28px var(--gap);
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+  }
+
+  .contact__body {
+    display: grid;
+    gap: 22px;
+    justify-items: start;
+  }
+
+  .contact__availability {
+    font-size: 1rem;
+    color: var(--text-muted);
+  }
+
+  .contact__email {
+    font-size: clamp(1.25rem, 0.85rem + 2vw, 2.5rem);
+    line-height: 1.15;
+    font-weight: 560;
+    font-stretch: 100%;
+    letter-spacing: -0.01em;
+    background-size: 0% 2px;
+  }
+
+  @media (min-width: 480px) {
+    .contact__email {
+      font-stretch: 112%;
+    }
+  }
+
+  .contact__email:hover,
+  .contact__email:focus-visible {
+    background-size: 100% 2px;
+  }
+
+  .contact__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 32px;
+    font-size: 1rem;
+    font-weight: 500;
+  }
+
+  .contact__arrow {
+    display: inline-block;
+    margin-left: 4px;
+    color: var(--text-faint);
+    transition: transform 0.35s var(--ease-out);
+  }
+
+  .contact__links a:hover .contact__arrow {
+    transform: translate(2px, -2px);
+  }
+
+  .contact__dev-hint {
+    max-width: 52ch;
+    padding: 14px 16px;
+    border: 1px dashed var(--line-strong);
+    border-radius: var(--radius);
+    font-size: 0.875rem;
+    color: var(--text-muted);
+  }
+
+  .contact__dev-hint code {
+    font-size: 0.8125rem;
+    color: var(--text);
+  }
+
+  @media (min-width: 1024px) {
+    .contact__inner {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+    }
+
+    .contact__label {
+      grid-column: 1 / span 2;
+    }
+
+    .contact__body {
+      grid-column: 3 / span 10;
+    }
+  }
+</style>

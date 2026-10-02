@@ -1,0 +1,99 @@
+---
+import { about } from '../data/site';
+---
+
+<section class="about" id="about" aria-labelledby="about-title">
+  <div class="container">
+    <div class="about__inner">
+      <h2 class="eyebrow about__label" id="about-title" data-reveal>About</h2>
+
+      <div class="about__body" data-reveal>
+        <p class="about__statement">{about.statement}</p>
+        <p class="about__text">{about.body}</p>
+      </div>
+
+      {
+        about.capabilities.length > 0 && (
+          <div class="about__capabilities" data-reveal>
+            <h3 class="eyebrow">Capabilities</h3>
+            <ul class="capabilities">
+              {about.capabilities.map((item) => (
+                <li>{item}</li>
+              ))}
+            </ul>
+          </div>
+        )
+      }
+    </div>
+  </div>
+</section>
+
+<style>
+  .about {
+    margin-top: var(--section-space);
+  }
+
+  .about__inner {
+    display: grid;
+    gap: 28px var(--gap);
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+  }
+
+  .about__body {
+    display: grid;
+    gap: 22px;
+  }
+
+  .about__statement {
+    max-width: 24ch;
+    font-size: clamp(1.375rem, 1.05rem + 1.3vw, 2.25rem);
+    line-height: 1.2;
+    font-weight: 450;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+
+  .about__text {
+    max-width: 56ch;
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--text-muted);
+  }
+
+  .about__capabilities {
+    display: grid;
+    gap: 14px;
+    align-content: start;
+  }
+
+  .capabilities li {
+    padding: 11px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 0.9375rem;
+    line-height: 1.4;
+  }
+
+  .capabilities li:first-child {
+    border-top: 1px solid var(--line);
+  }
+
+  /* Same column lines as the hero and the lead caption: 1–2 label, 3–8 text, 9–12 side column. */
+  @media (min-width: 1024px) {
+    .about__inner {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+    }
+
+    .about__label {
+      grid-column: 1 / span 2;
+    }
+
+    .about__body {
+      grid-column: 3 / span 6;
+    }
+
+    .about__capabilities {
+      grid-column: 9 / span 4;
+    }
+  }
+</style>

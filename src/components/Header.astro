@@ -1,0 +1,149 @@
+---
+import { site } from '../data/site';
+
+const nav = [
+  { href: '#work', label: 'Work' },
+  { href: '#about', label: 'About' },
+  { href: '#contact', label: 'Contact' },
+];
+---
+
+<a class="skip-link" href="#work">Skip to work</a>
+
+<header class="site-header" data-header>
+  <div class="container site-header__inner">
+    <a class="wordmark hit-area" href="#top">
+      {site.name && <span class="wordmark__name">{site.name}</span>}
+      <span class:list={['wordmark__role', { 'wordmark__role--solo': !site.name }]}>{site.role}</span>
+      <span class="sr-only">, back to top</span>
+    </a>
+
+    <nav aria-label="Primary">
+      <ul class="nav">
+        {
+          nav.map((item) => (
+            <li>
+              <a class="nav__link link-underline hit-area" href={item.href}>
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<style>
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    height: var(--header-h);
+    border-bottom: 1px solid transparent;
+    transition:
+      background-color 0.35s var(--ease),
+      border-color 0.35s var(--ease);
+  }
+
+  .site-header:global(.is-scrolled) {
+    background: color-mix(in srgb, var(--bg) 92%, transparent);
+    border-bottom-color: var(--line);
+  }
+
+  @supports (backdrop-filter: blur(1px)) {
+    .site-header:global(.is-scrolled) {
+      background: color-mix(in srgb, var(--bg) 80%, transparent);
+      backdrop-filter: saturate(1.2) blur(14px);
+    }
+  }
+
+  /* Very short screens (zoomed in, phone held sideways): don't pin the header over the content. */
+  @media (max-height: 480px) {
+    .site-header {
+      position: relative;
+    }
+  }
+
+  .site-header__inner {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+  }
+
+  .wordmark {
+    display: flex;
+    flex: 0 1 auto;
+    align-items: baseline;
+    gap: 12px;
+    min-width: 0;
+    font-size: 0.8125rem;
+    font-weight: 620;
+    font-stretch: 118%;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .wordmark__name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .wordmark__role {
+    color: var(--text-faint);
+    font-weight: 500;
+  }
+
+  .wordmark__role--solo {
+    color: var(--text);
+    font-weight: 620;
+  }
+
+  .nav {
+    display: flex;
+    flex: none;
+    gap: clamp(16px, 2.6vw, 36px);
+  }
+
+  .nav__link {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    color: var(--text-muted);
+    transition: color 0.25s var(--ease);
+  }
+
+  .nav__link:hover,
+  .nav__link:focus-visible {
+    color: var(--text);
+  }
+
+  @media (max-width: 560px) {
+    .wordmark {
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
+    }
+
+    /* With a name set, the role makes way for it on phones. */
+    .wordmark__role:not(.wordmark__role--solo) {
+      display: none;
+    }
+  }
+
+  /* On narrow phones the work starts right below the fold, so "Work" is the link to drop. */
+  @media (max-width: 420px) {
+    .nav li:first-child {
+      display: none;
+    }
+  }
+
+  @media (max-width: 360px) {
+    .wordmark {
+      font-stretch: 100%;
+      letter-spacing: 0.06em;
+    }
+  }
+</style>
