@@ -25,4 +25,4 @@ npm run check    # type and template checks
 
 ## Rights
 
-Star Wars, The Outlast Trials and Minecraft names, characters and logos belong to their respective owners. This is a personal portfolio, not affiliated with or endorsed by them. The thumbnails are my own design work.
+Star Wars, The Outlast Trials and Minecraft names, characters and logos belong to their respective owners. This is a personal portfolio, not affiliated with or endorsed by them.
